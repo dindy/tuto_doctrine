@@ -18,6 +18,7 @@ use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * @method Product|null find($id, $lockMode = null, $lockVersion = null)
@@ -29,9 +30,10 @@ class ProductRepository extends ServiceEntityRepository
 {
     private $entityManager;
 
-    public function __construct(ManagerRegistry $registry, EntityManagerInterface $entityManager)
+    public function __construct(ManagerRegistry $registry, EntityManagerInterface $entityManager, ValidatorInterface $validator)
     {
         $this->entityManager = $entityManager;
+        $this->validator = $validator;
         parent::__construct($registry, Product::class);
     }
 
@@ -62,9 +64,12 @@ class ProductRepository extends ServiceEntityRepository
     public function create(object $raw_product)
     {
         $product = new Product();
+        $category = null;
 
         $category_id = $raw_product->category_id;
-        $category = $this->entityManager->getRepository(Category::class)->find($category_id);
+        if (!is_null($category_id)) {
+            $category = $this->entityManager->getRepository(Category::class)->find($category_id);
+        }
 
         $product
             ->setName($raw_product->name)
@@ -72,6 +77,13 @@ class ProductRepository extends ServiceEntityRepository
             ->setDescription($raw_product->description)
             ->setCategory($category)
         ;
+        
+        $errors = $this->validator->validate($product);
+        
+        if (count($errors) > 0) {
+            dump($errors);exit;
+            throw new \Exception('Produit non valide');
+        }
 
         $this->entityManager->persist($product);
         $this->entityManager->flush();
