@@ -95,38 +95,43 @@ class ProductRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('p');
     }
 
-    public function findAllProductsByPriceQuery(int $price): QueryBuilder
+    public function findByPriceQuery(QueryBuilder $qb, int $price): QueryBuilder
     {
-        return $this
-            ->findAllProductsQuery()
+        return $qb
             ->andWhere('p.price > :price')
             ->setParameter('price', $price, \PDO::PARAM_INT)
             ->orderBy('p.price', 'ASC')
         ;
     }
 
-    public function findAllProductsByPriceAndNameQuery(int $price, string $name)
+    public function findByNameQuery(QueryBuilder $qb, string $name): QueryBuilder
     {
-        return $this
-            ->findAllProductsByPriceQuery($price)
+        return $qb
             ->andWhere("p.name LIKE :name")
             ->setParameter('name', "%$name%")
         ;
     }
 
-    public function findAllProductsByPrice(int $price) 
+    public function findAllProductsByPriceAndName(int $price, string $name = null)
     {
-        return $this
-            ->findAllProductsByPriceQuery($price)
+        $qb = $this->findAllProductsQuery($price);
+        
+        if (!is_null($name)) $qb = $this->findByNameQuery($qb, $name);
+        
+        $qb = $this->findByPriceQuery($qb, $price);
+
+        return $qb            
             ->getQuery()
             ->getArrayResult()
         ;
     }
 
-    public function findAllProductsByPriceAndName(int $price, string $name) 
+    public function findAllProductsByPrice(int $price) 
     {
+        $qb = $this->findAllProductsQuery();
+        
         return $this
-            ->findAllProductsByPriceAndNameQuery($price, $name)
+            ->findByPriceQuery($price)
             ->getQuery()
             ->getArrayResult()
         ;

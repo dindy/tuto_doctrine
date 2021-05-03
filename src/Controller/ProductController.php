@@ -97,7 +97,7 @@ class ProductController extends AbstractController
     }      
 
     /**
-     * @Route("/product/named/{name}/{price}")
+     * @Route("/product/nameandprice/{name}/{price}")
      */
     public function named($name, $price)
     {
